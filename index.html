@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Marmelad&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/1aff4cb577.js" crossorigin="anonymous"></script>
+  <title>Weather App</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, button, input {
+      font-family: 'Marmelad', sans-serif;
+      font-size: 1.2rem;
+    }
+    .page-wrapper, .container, .searched-info-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      align-content: center;
+    }
+    .page-wrapper {
+      width: fit-content;
+      margin: 50px auto;
+    }
+    .my-info-section {
+      align-self: flex-start;
+      margin-top: 20px;
+    }
+    .searched-info-section {
+      margin-top: 40px;
+    }
+    h1 {
+      color: rgb(29, 134, 175);
+      margin-bottom: 25px;
+    }
+    button {
+      cursor: pointer;
+      padding: 3px 10px;
+    }
+    input {
+      padding: 0 5px 0 5px; 
+      height: 33px;
+      width: 300px;
+      vertical-align: top;
+      font-size: 1.1rem;
+    }
+    section p {
+      margin-top: 10px;
+    }
+    section span {
+      color: rgb(29, 134, 175);
+      padding-left: 5px;
+    }
+    p.err-msg {
+      color: rgb(145, 0, 0);
+    }
+    p.no-searches-msg {
+      color: rgb(165, 165, 165);
+    }
+  </style>
+</head>
+<body>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<div class="page-wrapper">
+  <div class="container">
+    <h1>My Weather App</h1>
+    <form>
+      <input type="text" class="search-input" placeholder="Search for a city">
+      <button type="submit">Find</button>
+      <p class="err-msg city-err" hidden>Please search for a valid city 😒</p>
+      <p class="err-msg loc-err" hidden>You denied permission to your location 😒</p>
+    </form>
+  </div>
+  <section class="my-info-section">
+    <p class="my-info location">Your location is: <span></span></p>
+    <p class="my-info weather">Current Weather: <span></span></p>
+    <p class="my-info sunrise">Sunrise At: <span></span></p>
+    <p class="my-info sunset">Sunset At: <span></span></p> 
+  </section>
+  <section class="searched-info-section">
+    <h4><u>Searched Weather:</u></h4>
+    <p class="no-searches-msg">no searches</p>
+    <!-- here will be different cities info child elements -->
+  </section>
+</div>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<script>
+
+  const displayedCities = [];
+  const baseEndpoint = 'https://api.openweathermap.org/data/2.5/weather';  
+  const apiKey = '18d89992ac2679e69306340c1d27dbaf';
+  const findBtn = document.querySelector('[type="submit"]'); // the "find" button
+  const msgInvalidCity = document.querySelector('.city-err'); // the message for invalid city search
+  const msgLocationDenied = document.querySelector('.loc-err'); // the message when user denied location
+  
+  // async function fetchCityData(cityName) {
+  //   try {
+  //     const res = await fetch(`${baseEndpoint}?q=${cityName}&appid=${apiKey}&units=metric`);
+  //     const data = await res.json();
+  //     console.log(data);
+  //     //return data;
+  //   } catch(err) {
+  //     console.log('OH NO!');
+  //     console.log(err);
+  //     msgInvalidCity.removeAttribute("hidden");
+  //   }
+  // }
+
+  function handleErrors(res) {
+    if (!res.ok) {
+      console.log('OH NO!');
+      throw Error(res.statusText);
+    }
+    return res;
+  }
+
+  async function fetchCityData(cityName) {
+    try {
+      const res = await fetch(`${baseEndpoint}?q=${cityName}&appid=${apiKey}&units=metric`);
+      await handleErrors(res);
+      await (res => console.log("ok"));
+      const data = await res.json();
+      return data;
+    } catch(error) {
+      console.log(error);
+    }
+  }
+
+  async function fetchCurrLocationData(lat, lon) {
+    try {
+      const res = await fetch(`${baseEndpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`);
+      const data = await res.json();
+      await createCityObj(data, true);
+    } catch(error) {
+      console.log(error);
+    }
+  }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    let lat = pos.coords.latitude;
+    let lon = pos.coords.longitude;
+    fetchCurrLocationData(lat, lon).catch(handleErrors);
+  }, err => console.warn(`OH NO! ${err.message}`));
+
+
+  // handle find button click
+  // fetch this city data from the api
+  // if the city is invalid - show message
+  // else - create local city object 
+  async function handleFind(e) {
+    e.preventDefault(); 
+    msgInvalidCity.setAttribute("hidden", true);
+    const cityInput = document.querySelector('.search-input').value;
+    const foundCity = await fetchCityData(cityInput).catch(handleErrors);
+    console.log(foundCity);
+    if(!foundCity) {
+      console.log('nope');
+      msgInvalidCity.setAttribute("hidden");
+    }
+    else {
+      createCityObj(foundCity, false);
+    }
+  }
+
+  // creates a local object with the data we want from all the information we got from the api
+  // isMyPos is a boolean that tells if it's the current location - to determine what function to call
+  function createCityObj(data, isMyPos) {
+    const cityObj = {};
+    cityObj.id = data.id;
+    cityObj.cityName = data.name;
+    cityObj.temperature = data.main.temp;
+    cityObj.tempFeelsLike = data.main.feels_like;
+    cityObj.weatherDesc = data.weather[0].description;
+    cityObj.country = data.sys.country;
+    cityObj.sunrise = formatTime(data.sys.sunrise);
+    cityObj.sunset = formatTime(data.sys.sunset);
+    if (isMyPos) {
+      displayCurrLocationInfo(cityObj);
+      displayedCities.push(cityObj);
+    } else {
+      isCityAlreadyDisplayed(cityObj) 
+      ? console.log('ohh city already displayed') 
+      : displayedCities.push(cityObj) && displayFoundCityInfo(cityObj);
+    }
+  }
+
+  // returns true if city already exists in the array
+  function isCityAlreadyDisplayed(cityObj) {
+    let res = false;
+    displayedCities.forEach(city => city.id === cityObj.id ? res = true : res);
+    return res;
+  }
+
+  function formatTime(givenTime) {
+    let time = new Date(givenTime * 1000);
+    let hours = "0" + time.getHours();
+    let minutes = "0" + time.getMinutes();
+    let formattedTime = hours.substr(-2) + ':' + minutes.substr(-2);
+    return formattedTime;
+  }
+
+  function displayCurrLocationInfo(cityObj) {   
+    document.querySelector('.my-info.location span').textContent = `${cityObj.cityName}, ${cityObj.country}`;
+    document.querySelector('.my-info.weather span').textContent = `${cityObj.temperature} \u2103 `, `${cityObj.weatherDesc}`;
+    document.querySelector('.my-info.sunrise span').textContent = `${cityObj.sunrise}`;
+    document.querySelector('.my-info.sunset span').textContent = `${cityObj.sunset}`;
+  }
+
+  function displayFoundCityInfo(cityObj) {
+    const searchedInfoSection = document.querySelector('.searched-info-section'); // container to put cities info 
+    document.querySelector('.no-searches-msg').style.display = 'none';
+    const cityDiv = document.createElement('div');
+    cityDiv.classList.add('.city-info');
+
+    const cityDiv_name = document.createElement('div');
+    const cityDiv_temp = document.createElement('div');
+    const cityDiv_icon = document.createElement('div');
+    const cityDiv_desc = document.createElement('div');
+
+    cityDiv.textContent = `${cityObj.cityName}: ${cityObj.temperature} \u2103 `;
+
+    searchedInfoSection.appendChild(cityDiv);
+
+    
+  }
+
+  // function putTextContent(locationObj, classKey) {
+  //   document.querySelector(`.my-info.${classKey} span`).textContent = locationObj.cityName;
+  // }
+
+
+
+
+
+ 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+ //fetchCityData('Kiev');
+ findBtn.addEventListener('click', handleFind);
+
+</script>
+</body>
+</html>
