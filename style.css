@@ -1,0 +1,157 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+:root {
+  --primary-color: rgb(29, 134, 175);
+  /* --primary-color-light: rgba(185, 219, 218, 0.801); */
+  /* --secondary-color: rgb(102, 50, 86); */
+}
+body {
+  background-color: rgb(248, 246, 238);
+}
+body, button, input {
+  font-family: 'Marmelad', sans-serif;
+  font-size: 1.2rem;
+}
+.page-wrapper, .container, .searched-info-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-content: center;
+}
+.page-wrapper {
+  width: fit-content;
+  margin: 50px auto;
+}
+.searched-info-section {
+  margin-top: 40px;
+}
+h1 {
+  color: var(--primary-color);
+  margin-bottom: 25px;
+}
+h4 {
+  margin-bottom: 20px;
+}
+button {
+  cursor: pointer;
+  padding: 3px 10px;
+}
+input {
+  padding: 0 5px 0 5px; 
+  height: 33px;
+  width: 300px;
+  vertical-align: top;
+  font-size: 1.1rem;
+}
+
+
+.my-info-section {
+  margin-top: 20px; 
+  display: grid;
+  /* background-color: rgba(204, 167, 110, 0.26); */
+  background-color: rgba(79, 100, 31, 0.205);
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+  padding: 0 10px 10px 20px;
+  border: 1px solid black;
+  border-radius: 10px;
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+  cursor: pointer;  
+}
+.right-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.my-info-section p {
+  margin-top: 10px;
+}
+.my-info-section span {
+  color: var(--primary-color);
+  padding-left: 5px;
+}
+.my-info.img{
+  margin: 0 auto;
+}
+.my-info.desc {
+  color: var(--primary-color);
+  margin: 0 0 20px 11px;
+}
+
+
+p.err-msg {
+  color: rgb(145, 0, 0);
+  height: 1.2rem;
+}
+p.no-searches-msg {
+  color: rgb(165, 165, 165);
+}
+
+.searched-info_cities-grid {
+  width: 60vw;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+div.city-info {
+  padding: 10px;
+  border: 1px solid black;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  text-align: center;
+  margin: 5px;
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+  cursor: pointer;
+}
+
+.city-info-name {
+  font-size: 1.1rem;
+}
+
+.city-info-time {
+  font-size: 0.8rem;
+}
+
+.city-info-temp {
+  font-size: 1.7rem;
+  margin-top: 10px;
+  font-weight: 900;
+  color: rgb(231, 86, 42);
+}
+
+
+.city-info.day {
+  background-color: rgba(156, 219, 235, 0.575);
+  background: url('https://ak.picdn.net/shutterstock/videos/1007869057/thumb/1.jpg') top;
+  color: black;
+}
+
+.city-info.night {
+  background-color: rgb(2, 26, 63);
+  background: url('https://images.sharefaith.com/images/3/1510264230735_32/img_mouseover3.jpg') center;
+  color: white;
+}
+
+.city-info.day.rain {
+  background-color: rgb(2, 26, 63);
+  background: url('https://image.shutterstock.com/image-photo/wet-glass-after-rain-raindrops-260nw-1507888532.jpg') no-repeat center center/cover;
+  color: white;
+}
+
+.city-info.day.snow {
+  background-color: rgb(2, 26, 63);
+  background: url('https://previews.123rf.com/images/tatyanagl/tatyanagl1307/tatyanagl130700109/20950978-winter-background-snowflakes-on-snow.jpg') center center/cover;
+  color: black;
+}

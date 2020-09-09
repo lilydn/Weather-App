@@ -4,66 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Marmelad&display=swap" rel="stylesheet">
-  <script src="https://kit.fontawesome.com/1aff4cb577.js" crossorigin="anonymous"></script>
-  <title>Weather App</title>
-  <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body, button, input {
-      font-family: 'Marmelad', sans-serif;
-      font-size: 1.2rem;
-    }
-    .page-wrapper, .container, .searched-info-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      align-content: center;
-    }
-    .page-wrapper {
-      width: fit-content;
-      margin: 50px auto;
-    }
-    .my-info-section {
-      align-self: flex-start;
-      margin-top: 20px;
-    }
-    .searched-info-section {
-      margin-top: 40px;
-    }
-    h1 {
-      color: rgb(29, 134, 175);
-      margin-bottom: 25px;
-    }
-    button {
-      cursor: pointer;
-      padding: 3px 10px;
-    }
-    input {
-      padding: 0 5px 0 5px; 
-      height: 33px;
-      width: 300px;
-      vertical-align: top;
-      font-size: 1.1rem;
-    }
-    section p {
-      margin-top: 10px;
-    }
-    section span {
-      color: rgb(29, 134, 175);
-      padding-left: 5px;
-    }
-    p.err-msg {
-      color: rgb(145, 0, 0);
-    }
-    p.no-searches-msg {
-      color: rgb(165, 165, 165);
-    }
-  </style>
+  <link rel="stylesheet" href="./style.css">
+  <title>Weather-App</title>
 </head>
 <body>
 <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -75,18 +17,28 @@
       <button type="submit">Find</button>
       <p class="err-msg city-err" hidden>Please search for a valid city 😒</p>
       <p class="err-msg loc-err" hidden>You denied permission to your location 😒</p>
+      <p class="err-msg same-search-err" hidden>This city is already displayed 😊</p>
     </form>
   </div>
   <section class="my-info-section">
-    <p class="my-info location">Your location is: <span></span></p>
-    <p class="my-info weather">Current Weather: <span></span></p>
-    <p class="my-info sunrise">Sunrise At: <span></span></p>
-    <p class="my-info sunset">Sunset At: <span></span></p> 
+    <div class="left-info">
+      <p class="my-info location">Your location is: <span></span></p>
+      <p class="my-info weather">Current Weather: <span></span></p>
+      <p class="my-info sunrise">Sunrise At: <span></span></p>
+      <p class="my-info sunset">Sunset At: <span></span></p> 
+    </div>
+    <div class="right-info">
+      <img class="my-info img">
+      <p class="my-info desc"></p>
+    </div>
+
   </section>
   <section class="searched-info-section">
     <h4><u>Searched Weather:</u></h4>
-    <p class="no-searches-msg">no searches</p>
-    <!-- here will be different cities info child elements -->
+    <div class="searched-info_cities-grid">
+      <p class="no-searches-msg">no searches</p>
+      <!-- here will be different cities info child elements -->
+    </div>
   </section>
 </div>
 
@@ -99,7 +51,9 @@
   const findBtn = document.querySelector('[type="submit"]'); // the "find" button
   const msgInvalidCity = document.querySelector('.city-err'); // the message for invalid city search
   const msgLocationDenied = document.querySelector('.loc-err'); // the message when user denied location
-  
+  const msgSameSearch = document.querySelector('.same-search-err'); // the message when user searches for a city that is already displayed
+
+
   // async function fetchCityData(cityName) {
   //   try {
   //     const res = await fetch(`${baseEndpoint}?q=${cityName}&appid=${apiKey}&units=metric`);
@@ -142,12 +96,16 @@
       console.log(error);
     }
   }
-
+  
   navigator.geolocation.getCurrentPosition(pos => {
     let lat = pos.coords.latitude;
     let lon = pos.coords.longitude;
     fetchCurrLocationData(lat, lon).catch(handleErrors);
-  }, err => console.warn(`OH NO! ${err.message}`));
+  }, err => {
+    console.warn(`OH NO! ${err.message}`);
+    msgLocationDenied.removeAttribute("hidden");
+    document.querySelector('.my-info-section').style.color = "lightgrey"
+  });
 
 
   // handle find button click
@@ -157,38 +115,46 @@
   async function handleFind(e) {
     e.preventDefault(); 
     msgInvalidCity.setAttribute("hidden", true);
-    const cityInput = document.querySelector('.search-input').value;
-    const foundCity = await fetchCityData(cityInput).catch(handleErrors);
-    console.log(foundCity);
+    msgSameSearch.setAttribute("hidden", true);
+    let searchInput = document.querySelector('.search-input');
+    const foundCity = await fetchCityData(searchInput.value).catch(handleErrors);
     if(!foundCity) {
-      console.log('nope');
-      msgInvalidCity.setAttribute("hidden");
+      msgInvalidCity.removeAttribute("hidden");
     }
     else {
       createCityObj(foundCity, false);
+      searchInput.value = '';
     }
   }
 
   // creates a local object with the data we want from all the information we got from the api
   // isMyPos is a boolean that tells if it's the current location - to determine what function to call
-  function createCityObj(data, isMyPos) {
+  async function createCityObj(data, isMyPos) {
     const cityObj = {};
     cityObj.id = data.id;
     cityObj.cityName = data.name;
     cityObj.temperature = data.main.temp;
     cityObj.tempFeelsLike = data.main.feels_like;
     cityObj.weatherDesc = data.weather[0].description;
+    cityObj.icon = data.weather[0].icon;
     cityObj.country = data.sys.country;
-    cityObj.sunrise = formatTime(data.sys.sunrise);
-    cityObj.sunset = formatTime(data.sys.sunset);
+    cityObj.cityTime = cityTimeFormat(timeZoneToTime(data));
+    cityObj.sunrise = formatTime(data.sys.sunrise, data.timezone);
+    cityObj.sunset = formatTime(data.sys.sunset, data.timezone);
+    let utcTime = timeZoneToTime(data) - data.timezone;
+    cityObj.night = isNight(utcTime, data);
     if (isMyPos) {
       displayCurrLocationInfo(cityObj);
       displayedCities.push(cityObj);
-    } else {
-      isCityAlreadyDisplayed(cityObj) 
-      ? console.log('ohh city already displayed') 
-      : displayedCities.push(cityObj) && displayFoundCityInfo(cityObj);
-    }
+    } else handleCreatedCityActions(cityObj);
+  }
+
+  function handleCreatedCityActions(cityObj) {
+    isCityAlreadyDisplayed(cityObj) 
+    ? msgSameSearch.removeAttribute("hidden") &&
+      console.log('ohh city already displayed') 
+    : displayedCities.push(cityObj) && 
+      displayFoundCityInfo(cityObj);
   }
 
   // returns true if city already exists in the array
@@ -198,64 +164,115 @@
     return res;
   }
 
-  function formatTime(givenTime) {
-    let time = new Date(givenTime * 1000);
+  function formatTime(givenTime, timezone) {
+    let time = new Date (formatTimeToSec(givenTime, timezone));
     let hours = "0" + time.getHours();
     let minutes = "0" + time.getMinutes();
     let formattedTime = hours.substr(-2) + ':' + minutes.substr(-2);
     return formattedTime;
   }
 
+  function formatTimeToSec(givenTime, timezone) {
+    let myOffset = new Date().getTimezoneOffset() * 60; //10800
+    let time = (givenTime + timezone + myOffset) * 1000;
+    return time;
+  }
+
+  function timeZoneToTime(data) {
+    let timezone = data.timezone;
+    let time = new Date();
+    let localTime = time.getTime();
+    let localOffset = time.getTimezoneOffset() * 60000;
+    let utc = localTime + localOffset;
+    let utcTime = utc + (1000 * timezone);
+    return utcTime;
+  }
+
+  function cityTimeFormat(timeInSec) {
+    time = new Date(timeInSec);
+    time = time.toString().slice(16,21);
+    return time;
+  }
+
+  function isNight(cityTime, data) {;
+    let sunriseTime = formatTimeToSec(data.sys.sunrise, data.timezone);
+    let sunsetTime = formatTimeToSec(data.sys.sunset, data.timezone);
+    if (cityTime > sunriseTime && cityTime < sunsetTime) {
+      return false;
+    }
+    else return true; 
+  }
+
+
+  // display info to current location 
   function displayCurrLocationInfo(cityObj) {   
     document.querySelector('.my-info.location span').textContent = `${cityObj.cityName}, ${cityObj.country}`;
-    document.querySelector('.my-info.weather span').textContent = `${cityObj.temperature} \u2103 `, `${cityObj.weatherDesc}`;
+    document.querySelector('.my-info.weather span').textContent = `${cityObj.temperature} \u2103`, `${cityObj.weatherDesc}`;
     document.querySelector('.my-info.sunrise span').textContent = `${cityObj.sunrise}`;
     document.querySelector('.my-info.sunset span').textContent = `${cityObj.sunset}`;
+    document.querySelector('.my-info.img').setAttribute("src",`http://openweathermap.org/img/wn/${cityObj.icon}@2x.png`);
+    document.querySelector('.my-info.desc').textContent = `${cityObj.weatherDesc}`;
   }
 
+
+  // draw city elements and inject them to the DOM
   function displayFoundCityInfo(cityObj) {
-    const searchedInfoSection = document.querySelector('.searched-info-section'); // container to put cities info 
+    const searchedInfoGrid = document.querySelector('.searched-info_cities-grid'); 
     document.querySelector('.no-searches-msg').style.display = 'none';
+
+    //create elements:
     const cityDiv = document.createElement('div');
-    cityDiv.classList.add('.city-info');
-
-    const cityDiv_name = document.createElement('div');
-    const cityDiv_temp = document.createElement('div');
-    const cityDiv_icon = document.createElement('div');
-    const cityDiv_desc = document.createElement('div');
-
-    cityDiv.textContent = `${cityObj.cityName}: ${cityObj.temperature} \u2103 `;
-
-    searchedInfoSection.appendChild(cityDiv);
-
+    const cityDiv_name = document.createElement('p');
+    const cityDiv_time = document.createElement('p');
+    const cityDiv_temp = document.createElement('p');
+    const cityDiv_icon = document.createElement('img');
+    const cityDiv_desc = document.createElement('p'); 
     
+    giveClassesToElements(cityObj,cityDiv,cityDiv_name,cityDiv_time,cityDiv_temp,cityDiv_icon,cityDiv_desc);
+    cityDiv.addEventListener('click', (e) => removeCityDiv(e,cityObj));
+
+    //append children:  
+    searchedInfoGrid.appendChild(cityDiv);
+    cityDiv.appendChild(cityDiv_name);
+    cityDiv.appendChild(cityDiv_time);
+    cityDiv.appendChild(cityDiv_temp);
+    cityDiv.appendChild(cityDiv_icon);
+    cityDiv.appendChild(cityDiv_desc); 
   }
 
-  // function putTextContent(locationObj, classKey) {
-  //   document.querySelector(`.my-info.${classKey} span`).textContent = locationObj.cityName;
-  // }
+  function giveClassesToElements(cityObj,cityDiv,cityDiv_name,cityDiv_time,cityDiv_temp,cityDiv_icon,cityDiv_desc) {
+    cityDiv.classList.add('city-info');
+    cityObj.night ? cityDiv.classList.add('night') : cityDiv.classList.add('day');
+    cityObj.weatherDesc.includes('rain') 
+    || cityObj.weatherDesc.includes('drizzle')
+    || cityObj.weatherDesc.includes('thunderstorm')
+    ? cityDiv.classList.add('rain') : '';
+    cityObj.weatherDesc.includes('snow') ? cityDiv.classList.add('snow') : '';
+    cityDiv_name.classList.add('city-info-name');
+    cityDiv_time.classList.add('city-info-time');
+    cityDiv_temp.classList.add('city-info-temp');
+    cityDiv_icon.classList.add('city-info-icon');
+    cityDiv_desc.classList.add('city-info-desc');
+    // add text content:
+    cityDiv_name.textContent = `${cityObj.cityName}, ${cityObj.country}`;
+    cityDiv_time.textContent = `current time: ${cityObj.cityTime}`;
+    cityDiv_temp.textContent = `${cityObj.temperature}\u2103`;
+    cityDiv_icon.setAttribute("src",`http://openweathermap.org/img/wn/${cityObj.icon}@2x.png`);
+    cityDiv_desc.textContent = `${cityObj.weatherDesc}`;
+  }
+
+  // click on city element handler
+  function removeCityDiv(e, cityObj) {
+    e.target.closest('div').remove();
+    let ind = displayedCities.indexOf(cityObj);
+    displayedCities.splice(ind,1);
+    if(displayedCities.length === 1) {
+      document.querySelector('.no-searches-msg').style.display = 'block';
+    }
+  }
 
 
 
-
-
- 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
- //fetchCityData('Kiev');
  findBtn.addEventListener('click', handleFind);
 
 </script>
