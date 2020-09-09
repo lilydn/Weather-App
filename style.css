@@ -6,9 +6,8 @@
   padding: 0;
 }
 :root {
-  --primary-color: rgb(29, 134, 175);
-  /* --primary-color-light: rgba(185, 219, 218, 0.801); */
-  /* --secondary-color: rgb(102, 50, 86); */
+  --primary-color: rgb(15, 107, 143);
+  --secondary-color: rgb(248, 93, 37);
 }
 body {
   background-color: rgb(248, 246, 238);
@@ -31,7 +30,7 @@ body, button, input {
   margin-top: 40px;
 }
 h1 {
-  color: var(--primary-color);
+  color: var(--secondary-color);
   margin-bottom: 25px;
 }
 h4 {
@@ -54,7 +53,7 @@ input {
   margin-top: 20px; 
   display: grid;
   /* background-color: rgba(204, 167, 110, 0.26); */
-  background-color: rgba(79, 100, 31, 0.205);
+  background-color: rgba(206, 160, 9, 0.349);
   grid-template-rows: 1fr;
   grid-template-columns: 1fr 1fr;
   justify-items: center;
@@ -128,7 +127,7 @@ div.city-info {
   font-size: 1.7rem;
   margin-top: 10px;
   font-weight: 900;
-  color: rgb(231, 86, 42);
+  color: var(--primary-color); /* rgb(231, 86, 42) */
 }
 
 
@@ -144,14 +143,36 @@ div.city-info {
   color: white;
 }
 
+.city-info.night > .city-info-temp {
+  color: rgb(119, 186, 212);
+}
+
 .city-info.day.rain {
   background-color: rgb(2, 26, 63);
   background: url('https://image.shutterstock.com/image-photo/wet-glass-after-rain-raindrops-260nw-1507888532.jpg') no-repeat center center/cover;
   color: white;
 }
 
+.city-info.day.rain > .city-info-temp {
+  color: rgb(3, 89, 126);
+}
+
 .city-info.day.snow {
   background-color: rgb(2, 26, 63);
   background: url('https://previews.123rf.com/images/tatyanagl/tatyanagl1307/tatyanagl130700109/20950978-winter-background-snowflakes-on-snow.jpg') center center/cover;
   color: black;
+}
+
+
+
+@media only screen and (max-width: 650px) {
+  .searched-info_cities-grid {
+    width: 90vw;
+  }
+  .my-info-section {
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr;
+    width: 80vw;
+    padding-top: 15px;
+  }
 }
